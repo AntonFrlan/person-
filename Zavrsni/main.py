@@ -3,6 +3,7 @@ from imutils.object_detection import non_max_suppression
 import cv2 as cv
 import imutils
 import loadPics
+import time
 
 def harris(img):
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)  # prebacivanje u sivu jer moram
@@ -19,13 +20,13 @@ def pause(key):#pauziranje i pregledavanje rezultata
 
 
 def centeredRectangle(dot, frame, xa, ya, xb, yb):#crtanje pravokutnika s centroidom u centru
-    width = int((xb - xa) / 2)
-    height = int((yb - ya) / 2)
+    width = (xb - xa) / 2
+    height = (yb - ya) / 2
     if dot is not None:
-        xa = dot[0] - width
-        ya = dot[1] - height
-        xb = dot[0] + width
-        yb = dot[1] + height
+        xa = int(dot[0] - width)
+        ya = int(dot[1] - height)
+        xb = int(dot[0] + width)
+        yb = int(dot[1] + height)
         cv.rectangle(frame, (xa, ya), (xb, yb), (0, 255, 0), 2)
 
 
@@ -46,7 +47,7 @@ def getDot(src, H, xa=0, ya=0, xb=99999, yb=99999):#racunanje centroida u meti p
             x = int(x / g)
             y = int(y / g)
             cv.circle(src, (y, x), 5, (0, 0, 255), -1)
-            return [y, x]
+            return np.array([y, x])
         return None
 
 # Press Shift+F10 to execute it or replace it with your code.
@@ -107,86 +108,79 @@ for i in range(1, picNum):
 cv.destroyAllWindows()
 pics.close()
 
-#------------------------------------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------------------------------------------
 
 pics = open('pics.txt', 'r')
-# Parameters for lucas kanade optical flow
-lk_params = dict( winSize  = (15,15),
-                  maxLevel = 2,
-                  criteria = (cv.TERM_CRITERIA_EPS | cv.TERM_CRITERIA_COUNT, 10, 0.03))
-# Create some random colors
-color = np.random.randint(0,255,(100,3))
-# Take first frame and find corners in it
-old_frame = cv.imread(pics.readline())
-old_gray = cv.cvtColor(old_frame, cv.COLOR_BGR2GRAY)
+frame = cv.imread(pics.readline())
+oldGray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+p0 = cv.goodFeaturesToTrack(oldGray, 10000, 0.01, 1, useHarrisDetector=True)  # harris
 
-oldDot = np.array([[168, 294]])
-oldDot = np.float32(oldDot)
-p0 = cv.goodFeaturesToTrack(old_gray, 10000, 0.01, 1, useHarrisDetector=True)  # harris
-# Create a mask image for drawing purposes
-mask = np.zeros_like(old_frame)
+n = 11
+firstFrame = cv.GaussianBlur(oldGray, (21, 21), 0)
 for i in range(1, picNum):
     frame = cv.imread(pics.readline())
-    frame_gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-
-    dot, st, err = cv.calcOpticalFlowPyrLK(old_gray, frame_gray, oldDot, None, **lk_params)#DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDIIIIIIIIIIIIIIIOOOOOOOOOOOOOOOOOO
-    diff = dot - oldDot
-    a,b = dot.ravel()
-    frame = cv.circle(frame,(a,b),5,(0, 0, 255),-1)
-
-    img = cv.add(frame,mask)
-    cv.imshow('frame',img)
-    k = cv.waitKey(30) & 0xff
-    if k == 27:
-        break
-    # Now update the previous frame and previous points
-    old_gray = frame_gray.copy()
-    oldDot = np.float32(dot.copy())
-pics.close()
-cv.destroyAllWindows()
-
-
-n = 0
-firstFrame = None
-pics = open('pics.txt', 'r')
-for i in range(picNum):
-    if firstFrame is not None:
-        oldFrame = frame.copy()
-    frame = cv.imread(pics.readline())
     gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-    gray = cv.GaussianBlur(gray, (21, 21), 0)
+    gaus = cv.GaussianBlur(gray, (21, 21), 0)
 
-    # if the first frame is None, initialize it
-    if firstFrame is None:
-        firstFrame = gray
-        continue
+
     # compute the absolute difference between the current frame and
     # first frame
-    frameDelta = cv.absdiff(firstFrame, gray)
-    thresh = cv.threshold(frameDelta, 50, 255, cv.THRESH_BINARY)[1]
+    if n == 1:
+        oldDots = dots.copy()
+        dots, st, err = cv.calcOpticalFlowPyrLK(oldGray, gray, oldDots, None, winSize=(15, 15),
+                                                maxLevel=2,
+                                                criteria=(cv.TERM_CRITERIA_EPS | cv.TERM_CRITERIA_COUNT, 10, 0.03))
+        diff = dots - oldDots
 
-    # dilate the thresholded image to fill in holes, then find contours
-    # on thresholded image
-    thresh = cv.dilate(thresh, None, iterations=2)
-    cnts = cv.findContours(thresh.copy(), cv.RETR_EXTERNAL,
-                           cv.CHAIN_APPROX_SIMPLE)
-    cnts = imutils.grab_contours(cnts)
+    if(n == 10):
+        n = 0
+        frameDelta = cv.absdiff(firstFrame, gaus)
+        thresh = cv.threshold(frameDelta, 50, 255, cv.THRESH_BINARY)[1]
 
-    T = cv.bitwise_and(oldFrame, oldFrame, mask=thresh)
-    cv.imshow("oldT", T)
-    thresh = cv.bitwise_and(frame, frame, mask=thresh)
-    # loop over the contours
-    for c in cnts:
-        # if the contour is too small, ignore it
-        if cv.contourArea(c) < 500:
+        # dilate the thresholded image to fill in holes, then find contours
+        # on thresholded image
+        thresh = cv.dilate(thresh, None, iterations=2)
+        cnts = cv.findContours(thresh.copy(), cv.RETR_EXTERNAL,
+                               cv.CHAIN_APPROX_SIMPLE)
+        cnts = imutils.grab_contours(cnts)
+
+        T = cv.bitwise_and(oldFrame, oldFrame, mask=thresh)
+        cv.imshow("oldT", T)
+        thresh = cv.bitwise_and(frame, frame, mask=thresh)
+        # loop over the contours
+        size = 0
+        for c in cnts:
+            size += 1
+        if size == 0:
+            n = 10
             continue
+        dots = np.zeros((size, 2), dtype=np.float32)
+        j = -1
+        for c in cnts:
+            j += 1
+            # if the contour is too small, ignore it
+            if cv.contourArea(c) < 500:
+                continue
 
-        # compute the bounding box for the contour, draw it on the frame,
-        # and update the text
-        (x, y, w, h) = cv.boundingRect(c)
-        #cv.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-        H = harris(thresh)
-        centeredRectangle(getDot(frame, H, x, y, x + w, y + h), frame, x, y, x + w, y + h)
+            # compute the bounding box for the contour, draw it on the frame,
+            # and update the text
+            (x, y, w, h) = cv.boundingRect(c)
+            #cv.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            H = harris(thresh)
+            dots[j] = getDot(frame, H, x, y, x + w, y + h)
+            if dots[j] is not None:
+                centeredRectangle(dots[j], frame, x, y, x + w, y + h)
+    elif n == 11:
+        n = 10
+        oldGray = gray.copy()
+        continue
+    else:
+
+        for j in range(size):
+            if dots[j] is not None:
+                dots[j] += diff[j]
+                a, b = dots[j].ravel()
+                frame = cv.circle(frame, (a, b), 5, (0, 0, 255), -1)
 
 
     # show the frame and record if the user presses a key
@@ -198,7 +192,10 @@ for i in range(picNum):
     if key == ord("q"):
         break
     pause(key)
+
+    oldGray = gray.copy()
     n += 1
+    time.sleep(1)
 
 pics.close()
 cv.destroyAllWindows()

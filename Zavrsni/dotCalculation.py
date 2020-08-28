@@ -10,7 +10,7 @@ def rectCorners(c):
 
 def thresholdCalc(firstFrame, gaus):#background subtraction
     t = cv.absdiff(firstFrame, gaus)
-    t = cv.threshold(t, 50, 255, cv.THRESH_BINARY)[1]
+    t = cv.threshold(t, 45, 255, cv.THRESH_BINARY)[1]
     return cv.dilate(t, None, iterations=2)
 
 

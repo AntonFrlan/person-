@@ -11,12 +11,16 @@ class Centroid():
 
     def check(self, xa, ya, xb, yb):
         if self.dot is not None and not self.found:
-            j = self.center([xa, ya, xb, yb])
-            if j[0] < self.dot[0][0] < j[2] and j[1] < self.dot[0][1] < j[3]:
+            if xa < self.dot[0][0] < xb and ya < self.dot[0][1] < yb:
                 return True
         return False
 
-    def update(self, dot, xa, ya, xb, yb):
+    def update(self, dot=None, xa=None, ya=None, xb=None, yb=None):
+        if xa is None:
+            xa = self.dot[0][0] - self.width
+            ya = self.dot[0][1] - self.height
+            xb = self.dot[0][0] + self.width
+            yb = self.dot[0][1] + self.height
         if not self.found:
             self.width = int((xb - xa) / 2)
             self.height = int((yb - ya) / 2)
@@ -51,10 +55,3 @@ class Centroid():
             self.dot = self.oldDot + self.speed
             return True
         return False
-
-    def center(self, j):
-      #  j[2] += self.width
-      #  j[0] -= self.width
-       # j[3] += self.height
-        #j[1] -= self.height
-        return j

@@ -2,7 +2,6 @@ import numpy as np
 from imutils.object_detection import non_max_suppression
 import cv2 as cv
 import imutils
-import time
 import loadPics
 import dotCalculation as d
 import centroid
@@ -13,7 +12,6 @@ if picNum < 1:
     print("No pictures in folder.")
 hog = cv.HOGDescriptor()
 hog.setSVMDetector(cv.HOGDescriptor_getDefaultPeopleDetector())
-#frame = imutils.resize(frame, width=min(800, frame.shape[1]))
 
 pics = open('pics.txt', 'r')
 
@@ -28,6 +26,7 @@ cen = []#centroids
 n = 10
 for i in range(1, picNum):
     frame = cv.imread(pics.readline())
+    frame = imutils.resize(frame, width=min(800, frame.shape[1]))
 
     gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
     gaus = cv.GaussianBlur(gray, (21, 21), 0)
@@ -61,7 +60,7 @@ for i in range(1, picNum):
                     d.centeredRectangle(frame, cen[-1])
         for c in cen:
             if not c.found:
-                c.update(d.getDot(H, c.dot[0][0] - c.width, c.dot[0][1] - c.height, c.dot[0][0] + c.width, c.dot[0][1] + c.height), c.dot[0][0] - c.width, c.dot[0][1] - c.height, c.dot[0][0] + c.width, c.dot[0][1] + c.height)
+                c.update(d.getDot(H, c.dot[0][0] - c.width, c.dot[0][1] - c.height, c.dot[0][0] + c.width, c.dot[0][1] + c.height))
                 d.centeredRectangle(frame, c)
     else:
         for c in cen:
@@ -73,7 +72,7 @@ for i in range(1, picNum):
 
                 if c.dot is None or c.errorLK():
                     c.dot = c.oldDot + c.speed
-                j = c.center(d.rectCorners(c))
+                j = (d.rectCorners(c))
                 j = d.getDot(H, j[0], j[1], j[2], j[3])
                 if j is not None:
                     c.dot = j
@@ -90,13 +89,10 @@ for i in range(1, picNum):
     for c in cen:
         if c.nestanite(WIDTH, HEIGHT):
             del cen[j]
-        elif not c.found:
-            keys.pause(ord("w"))
         else:
             c.changeFound()
         j += 1
     oldGray = gray.copy()
     n += 1
-    time.sleep(0.1)
 pics.close()
 cv.destroyAllWindows()

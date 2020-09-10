@@ -42,7 +42,7 @@ class Centroid():
     def changeFound(self):
         self.found = not self.found
 
-    def nestanite(self, w, h):
+    def nestani(self, w, h):
         self.dis += 1
         x = self.dot[0][0]
         y = self.dot[0][1]
@@ -52,6 +52,5 @@ class Centroid():
 
     def errorLK(self):
         if 60 < abs(self.dot[0][0] - self.oldDot[0][0]) or 60 < abs(self.dot[0][1] - self.oldDot[0][1]):
-            self.dot = self.oldDot + self.speed
             return True
         return False

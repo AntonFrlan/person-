@@ -1,7 +1,7 @@
 import cv2 as cv
 
-def pause(key):#pauziranje i pregledavanje rezultata
-    if key == ord("w"):
+def pause(key):#pauziranje i pregledavanje
+    if key == ord("w"):# rezultata
         while True:
             key = cv.waitKey(1) & 0xFF
             if key == ord("e"):

@@ -17,7 +17,7 @@ def thresholdCalc(firstFrame, gaus):#background subtraction
 def harris(img):#racunanje harrisovih tocaka
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     gray = np.float32(gray)
-    return cv.goodFeaturesToTrack(gray, 10000, 0.01, 1, useHarrisDetector=True)
+    return cv.goodFeaturesToTrack(gray, 100000, 0.01, 1, useHarrisDetector=True)
 
 
 def centeredRectangle(frame, c):#crtanje pravokutnika s centroidom u centru
@@ -27,8 +27,8 @@ def centeredRectangle(frame, c):#crtanje pravokutnika s centroidom u centru
         cv.rectangle(frame, (x[0], x[1]), (x[2], x[3]), (0, 255, 0), 2)
 
 
-def getDot(H, xa=0, ya=0, xb=99999, yb=99999):#racunanje centroida u meti pracenja pomocu karakteristcnih tocaka
-    if H is not None:
+def getDot(H, xa, ya, xb, yb):#racunanje centroida u meti
+    if H is not None:         #pracenja pomocu karakteristcnih tocaka
         g = 0
         x = 0
         y = 0

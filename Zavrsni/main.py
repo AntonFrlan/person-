@@ -16,6 +16,7 @@ hog.setSVMDetector(cv.HOGDescriptor_getDefaultPeopleDetector())
 pics = open('pics.txt', 'r')
 
 frame = cv.imread(pics.readline())
+frame = imutils.resize(frame, width=min(800, frame.shape[1]), height=min(800, frame.shape[0]))
 oldGray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
 firstFrame = cv.GaussianBlur(oldGray, (21, 21), 0)
 
@@ -26,7 +27,7 @@ cen = []#centroids
 n = 10
 for i in range(1, picNum):
     frame = cv.imread(pics.readline())
-    frame = imutils.resize(frame, width=min(800, frame.shape[1]))
+    frame = imutils.resize(frame, width=WIDTH, height=HEIGHT)
 
     gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
     gaus = cv.GaussianBlur(gray, (21, 21), 0)
@@ -87,7 +88,7 @@ for i in range(1, picNum):
 
     j = 0
     for c in cen:
-        if c.nestanite(WIDTH, HEIGHT):
+        if c.nestani(WIDTH, HEIGHT):
             del cen[j]
         else:
             c.changeFound()
